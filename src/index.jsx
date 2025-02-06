@@ -1,4 +1,7 @@
-const content = <div>
-    <Test>test</Test>
-    <a href="xxx">link</a>
-</div>
+const content = (
+  <div>
+    <a href='xxx'>link</a>
+  </div>
+);
+
+console.log(JSON.stringify(content, null, 2));
