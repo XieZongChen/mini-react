@@ -31,6 +31,7 @@ function createTextNode(nodeValue) {
 let nextUnitOfWork = null; // 指向下一个要处理的 fiber 节点
 let wipRoot = null; // 当前正在处理的 fiber 链表的根 wipRoot
 let currentRoot = null; // 之前的历史 fiber 链表的根 currentRoot
+let deletions = null; // 记录要删除的节点
 
 function render(element, container) {
   wipRoot = {
@@ -38,8 +39,12 @@ function render(element, container) {
     props: {
       children: [element],
     },
-    alternate: currentRoot,
+    alternate: currentRoot, // 存在这里在后续 diff 时使用
   };
+
+  // 初始化 deletions
+  deletions = [];
+
   // 设置初始 nextUnitOfWork
   nextUnitOfWork = wipRoot;
 }
@@ -163,6 +168,65 @@ function updateDom(dom, prevProps, nextProps) {
       const eventType = name.toLowerCase().substring(2);
       dom.addEventListener(eventType, nextProps[name]);
     });
+}
+
+function reconcileChildren(wipFiber, elements) {
+  let index = 0; // 记录同层中元素的位置
+  let oldFiber = wipFiber.alternate?.child; // 拿到旧 fiber 用于 diff
+  let prevSibling = null; // 记录创建好的最新的 fiber，用于链接 fiber 树
+
+  while (index < elements.length || oldFiber != null) {
+    const element = elements[index];
+    let newFiber = null;
+
+    // 判断节点 type 是不是一样
+    const sameType = element?.type == oldFiber?.type;
+
+    if (sameType) {
+      // 节点 type 一样说明是更新
+      newFiber = {
+        type: oldFiber.type,
+        props: element.props,
+        dom: oldFiber.dom,
+        return: wipFiber,
+        alternate: oldFiber,
+        effectTag: 'UPDATE',
+      };
+    }
+    if (element && !sameType) {
+      // 节点 type 不一样但存在 element，说明是新增
+      newFiber = {
+        type: element.type,
+        props: element.props,
+        dom: null,
+        return: wipFiber,
+        alternate: null,
+        effectTag: 'PLACEMENT',
+      };
+    }
+    if (oldFiber && !sameType) {
+      // 节点 type 不一样 + 没有 element + 存在旧 fiber，说明是删除
+      oldFiber.effectTag = 'DELETION';
+      deletions.push(oldFiber);
+    }
+
+    if (oldFiber) {
+      // 依次取 sibling，逐一和新的 fiber 节点对比
+      oldFiber = oldFiber.sibling;
+    }
+
+    if (index === 0) {
+      // 如果新创建的 fiber 是当前层的第一个元素，则作为上一层（此时保存在 wipFiber）的 child 保存
+      wipFiber.child = newFiber;
+    } else if (element) {
+      // 同层的非第一个元素，均已 sibling 相连
+      prevSibling.sibling = newFiber;
+    }
+
+    // 记录创建好的最新的 fiber
+    prevSibling = newFiber;
+    index++; // 递增位置信息
+  }
 }
 
 const MiniReact = {
