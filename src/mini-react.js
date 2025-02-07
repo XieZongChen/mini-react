@@ -269,6 +269,18 @@ function useState(initialState) {
   return [stateHook.state, setState];
 }
 
+function useEffect(callback, deps) {
+  const effectHook = {
+    callback,
+    deps,
+    cleanup: undefined,
+  };
+  // useEffect 本质上是在 fiber.effectHooks 上添加一个元素
+  // 这样等 reconcile 结束，fiber 链表就构建好了，在 fiber 上打上了增删改的标记，并且也保存了要执行的 effect
+  // 在 commit 阶段遍历这个构建好的 fiber 链表，会执行增删改和 effect 函数
+  wipFiber.effectHooks.push(effectHook);
+}
+
 const MiniReact = {
   createElement,
 };
