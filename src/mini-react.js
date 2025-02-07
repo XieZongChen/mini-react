@@ -58,6 +58,14 @@ function workLoop(deadline) {
 requestIdleCallback(workLoop);
 
 function performUnitOfWork(fiber) {
+  const isFunctionComponent = fiber.type instanceof Function;
+  // 处理每个 fiber 节点的时候，要根据类型做不同的处理
+  if (isFunctionComponent) {
+    updateFunctionComponent(fiber);
+  } else {
+    updateHostComponent(fiber);
+  }
+
   // 处理每个 fiber 节点之后，会按照 child、sibling、return 的顺序返回下一个要处理的 fiber 节点
   if (fiber.child) {
     return fiber.child;
@@ -67,8 +75,34 @@ function performUnitOfWork(fiber) {
     if (nextFiber.sibling) {
       return nextFiber.sibling;
     }
-    nextFiber = nextFiber.return;
+    nextFiber = nextFiber.parent;
   }
+}
+
+let wipFiber = null; // 指向当前处理的 fiber
+let stateHookIndex = null;
+
+/**
+ * 函数组件处理
+ */
+function updateFunctionComponent(fiber) {
+  wipFiber = fiber;
+  stateHookIndex = 0;
+  wipFiber.stateHooks = []; // 存储 useState 的 hook 的值
+  wipFiber.effectHooks = []; // 存储 useEffect 的 hook 的值
+
+  const children = [fiber.type(fiber.props)];
+  reconcileChildren(fiber, children);
+}
+
+/**
+ * 原生标签处理
+ */
+function updateHostComponent(fiber) {
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber);
+  }
+  reconcileChildren(fiber, fiber.props.children);
 }
 
 const MiniReact = {
