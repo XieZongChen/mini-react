@@ -229,6 +229,46 @@ function reconcileChildren(wipFiber, elements) {
   }
 }
 
+function useState(initialState) {
+  const currentFiber = wipFiber;
+
+  // 在 fiber 节点上用 stateHooks 数组来存储 state 和多次调用 setState 的回调函数
+  const oldHook = wipFiber.alternate?.stateHooks[stateHookIndex];
+
+  const stateHook = {
+    state: oldHook ? oldHook.state : initialState, // 保存 state，如果前一次渲染的 stateHooks 的同一位置有值，则用上次渲染的值做初始化
+    queue: oldHook ? oldHook.queue : [], // 多次调用 setState 的回调函数队列
+  };
+
+  // 如果调用列表里有多次调用，这样对初始 state 执行多个 action（也就是 setState） 之后，就拿到了最终的 state 值
+  stateHook.queue.forEach((action) => {
+    stateHook.state = action(stateHook.state);
+  });
+
+  // 修改完 state 之后清空 queue
+  stateHook.queue = [];
+
+  stateHookIndex++;
+  // 每次调用 useState 时会在 stateHooks 添加一个元素来保存 state
+  wipFiber.stateHooks.push(stateHook);
+
+  function setState(action) {
+    const isFunction = typeof action === 'function';
+
+    // setState 就是在 action 数组里添加新的 action
+    stateHook.queue.push(isFunction ? action : () => action);
+
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber,
+    };
+    // 让 nextUnitOfWork 指向新的 wipRoot，从而开始新的一轮渲染
+    nextUnitOfWork = wipRoot;
+  }
+
+  return [stateHook.state, setState];
+}
+
 const MiniReact = {
   createElement,
 };
