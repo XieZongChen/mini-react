@@ -326,6 +326,15 @@ function commitWork(fiber) {
   commitWork(fiber.sibling);
 }
 
+function commitDeletion(fiber, domParent) {
+  // 删除的时候，如果当前 fiber 节点没有对应的 dom，就不断 child 向下找
+  if (fiber.dom) {
+    domParent.removeChild(fiber.dom);
+  } else {
+    commitDeletion(fiber.child, domParent);
+  }
+}
+
 const MiniReact = {
   createElement,
 };
