@@ -7,12 +7,7 @@ function App() {
     setCount((count) => count + 1);
   }
 
-  return (
-    <div>
-      <p>{count}</p>
-      <button onClick={handleClick}>加一</button>
-    </div>
-  );
+  return <button onClick={handleClick}>点击次数：{count}</button>;
 }
 
 render(<App />, document.getElementById('root'));
