@@ -403,6 +403,9 @@ function isDepsEqual(deps, newDeps) {
 
 const MiniReact = {
   createElement,
+  render,
+  useState,
+  useEffect,
 };
 
 window.MiniReact = MiniReact;
