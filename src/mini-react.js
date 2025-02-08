@@ -287,6 +287,19 @@ function useEffect(callback, deps) {
   wipFiber.effectHooks.push(effectHook);
 }
 
+function commitRoot() {
+  // commit 阶段先把需要删除的节点都删掉
+  deletions.forEach(commitWork);
+
+  // 然后遍历 fiber 链表，处理其它节点
+  commitWork(wipRoot.child);
+
+  // 所有操作处理完后，把当前 wipRoot 设置为 currentRoot，然后把 wipRoot、deletions 初始化，这就代表这次 reconcile 结束了
+  currentRoot = wipRoot;
+  wipRoot = null;
+  deletions = [];
+}
+
 const MiniReact = {
   createElement,
 };
