@@ -294,6 +294,9 @@ function commitRoot() {
   // 然后遍历 fiber 链表，处理其它节点
   commitWork(wipRoot.child);
 
+  // 然后处理 effect 逻辑
+  commitEffectHooks();
+
   // 所有操作处理完后，把当前 wipRoot 设置为 currentRoot，然后把 wipRoot、deletions 初始化，这就代表这次 reconcile 结束了
   currentRoot = wipRoot;
   wipRoot = null;
@@ -333,6 +336,69 @@ function commitDeletion(fiber, domParent) {
   } else {
     commitDeletion(fiber.child, domParent);
   }
+}
+
+function commitEffectHooks() {
+  function runCleanup(fiber) {
+    if (!fiber) return;
+
+    fiber.alternate?.effectHooks?.forEach((hook, index) => {
+      const deps = fiber.effectHooks[index].deps;
+
+      // 当没有传入 deps 数组，或者 deps 数组和上次不一致时，就执行 cleanup 函数
+      if (!hook.deps || !isDepsEqual(hook.deps, deps)) {
+        hook.cleanup?.();
+      }
+    });
+
+    runCleanup(fiber.child);
+    runCleanup(fiber.sibling);
+  }
+
+  function run(fiber) {
+    if (!fiber) return;
+
+    fiber.effectHooks?.forEach((newHook, index) => {
+      if (!fiber.alternate) {
+        // 当没有 alternate 的时候，就是首次渲染，直接执行所有的 effect
+        hook.cleanup = hook.callback();
+        return;
+      }
+
+      if (!newHook.deps) {
+        hook.cleanup = hook.callback();
+      }
+
+      if (newHook.deps.length > 0) {
+        const oldHook = fiber.alternate?.effectHooks[index];
+
+        if (!isDepsEqual(oldHook.deps, newHook.deps)) {
+          newHook.cleanup = newHook.callback();
+        }
+      }
+    });
+
+    run(fiber.child);
+    run(fiber.sibling);
+  }
+
+  // 先遍历一遍执行所有的 cleanup 函数
+  runCleanup(wipRoot);
+  // 然后再次遍历执行 effect 函数
+  run(wipRoot);
+}
+
+function isDepsEqual(deps, newDeps) {
+  if (deps.length !== newDeps.length) {
+    return false;
+  }
+
+  for (let i = 0; i < deps.length; i++) {
+    if (deps[i] !== newDeps[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 const MiniReact = {
