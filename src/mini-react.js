@@ -56,6 +56,12 @@ function workLoop(deadline) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
     shouldYield = deadline.timeRemaining() < 1;
   }
+
+  if (!nextUnitOfWork && wipRoot) {
+    // 没有 nextUnitOfWork 且有正在处理的 fiber 链表的根 wipRoot 的时候，也就是 reconcile 结束，开始执行 commit
+    commitRoot();
+  }
+
   // 用 requestIdleCallback 来代替 React 的时间分片，把 React Element 树转 fiber 的 reconcile 过程放到不同的任务里跑
   requestIdleCallback(workLoop);
 }
