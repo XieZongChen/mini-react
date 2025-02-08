@@ -340,6 +340,19 @@
     }
   }
 
+  function isDepsEqual(deps, newDeps) {
+    if (deps.length !== newDeps.length) {
+      return false;
+    }
+
+    for (let i = 0; i < deps.length; i++) {
+      if (deps[i] !== newDeps[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   function commitEffectHooks() {
     function runCleanup(fiber) {
       if (!fiber) return;
@@ -363,12 +376,12 @@
       fiber.effectHooks?.forEach((newHook, index) => {
         if (!fiber.alternate) {
           // 当没有 alternate 的时候，就是首次渲染，直接执行所有的 effect
-          hook.cleanup = hook.callback();
+          newHook.cleanup = newHook.callback();
           return;
         }
 
         if (!newHook.deps) {
-          hook.cleanup = hook.callback();
+          newHook.cleanup = newHook.callback();
         }
 
         if (newHook.deps.length > 0) {
@@ -388,19 +401,6 @@
     runCleanup(wipRoot);
     // 然后再次遍历执行 effect 函数
     run(wipRoot);
-  }
-
-  function isDepsEqual(deps, newDeps) {
-    if (deps.length !== newDeps.length) {
-      return false;
-    }
-
-    for (let i = 0; i < deps.length; i++) {
-      if (deps[i] !== newDeps[i]) {
-        return false;
-      }
-    }
-    return true;
   }
 
   const MiniReact = {
