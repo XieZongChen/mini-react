@@ -300,6 +300,32 @@ function commitRoot() {
   deletions = [];
 }
 
+function commitWork(fiber) {
+  // commitWork 按照 child、sibling 的顺序来递归遍历 fiber 链表，直到没有 fiber 后退出递归
+  if (!fiber) {
+    return;
+  }
+
+  let domParentFiber = fiber.return;
+  while (!domParentFiber.dom) {
+    // 不断向上找，找到可以挂载的 dom 节点
+    domParentFiber = domParentFiber.return;
+  }
+  const domParent = domParentFiber.dom;
+
+  // 按照之前标记的 effectTag 来处理 dom
+  if (fiber.effectTag === 'PLACEMENT' && fiber.dom != null) {
+    domParent.appendChild(fiber.dom);
+  } else if (fiber.effectTag === 'UPDATE' && fiber.dom != null) {
+    updateDom(fiber.dom, fiber.alternate.props, fiber.props);
+  } else if (fiber.effectTag === 'DELETION') {
+    commitDeletion(fiber, domParent);
+  }
+
+  commitWork(fiber.child);
+  commitWork(fiber.sibling);
+}
+
 const MiniReact = {
   createElement,
 };
