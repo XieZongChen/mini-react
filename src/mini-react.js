@@ -1,20 +1,20 @@
 /**
- * @file 简易React实现核心模块，包含虚拟DOM、协调算法、状态管理和生命周期处理
+ * @file 简易 React 实现核心模块，包含虚拟 DOM、协调算法、状态管理和生命周期处理
  * 主要功能包括：
- * - 创建虚拟DOM结构
- * - Fiber架构实现增量渲染
- * - 协调算法进行DOM差异更新
+ * - 创建虚拟 DOM 结构
+ * - Fiber 架构实现增量渲染
+ * - 协调算法进行 DOM 差异更新
  * - 支持函数组件和类组件
- * - 实现useState和useEffect钩子
+ * - 实现 useState 和 useEffect 钩子
  */
 // 最外面包一层函数，避免污染全局变量
 (function () {
   /**
-   * 创建虚拟DOM元素
+   * 创建虚拟 DOM 元素
    * @param {string|Function} type 元素类型
    * @param {Object|null} props 元素属性
    * @param {...any} children 子元素
-   * @returns {Object} 虚拟DOM对象
+   * @returns {Object} 虚拟 DOM 对象
    */
   function createElement(type, props, ...children) {
     return {
@@ -49,16 +49,16 @@
     };
   }
 
-  // Fiber架构相关全局变量
-  let nextUnitOfWork = null; // 下一个待处理的Fiber单元
-  let wipRoot = null; // 当前工作中的Fiber树根节点
-  let currentRoot = null; // 前一次提交的Fiber树根节点
+  // Fiber 架构相关全局变量
+  let nextUnitOfWork = null; // 下一个待处理的 Fiber 单元
+  let wipRoot = null; // 当前工作中的 Fiber 树根节点
+  let currentRoot = null; // 前一次提交的 Fiber 树根节点
   let deletions = null; // 待删除节点集合
 
   /**
-   * 将虚拟DOM渲染到容器
-   * @param {Object} element 虚拟DOM根元素
-   * @param {HTMLElement} container DOM容器元素
+   * 将虚拟 DOM 渲染到容器
+   * @param {Object} element 虚拟 DOM 根元素
+   * @param {HTMLElement} container DOM 容器元素
    */
   function render(element, container) {
     wipRoot = {
@@ -66,7 +66,7 @@
       props: {
         children: [element],
       },
-      alternate: currentRoot, // 连接前一次Fiber树用于diff比较
+      alternate: currentRoot, // 连接前一次 Fiber 树用于 diff 比较
     };
     deletions = [];
     nextUnitOfWork = wipRoot;
@@ -79,18 +79,18 @@
   function workLoop(deadline) {
     let shouldYield = false;
 
-    // 每次跑的时候判断下 timeRemaining 是否接近 0，是的话就中断循环，等下次 requestIdleCallback 的回调再继续处理 nextUnitOfWork 指向的 fiber 节点
+    // 每次跑的时候判断下 timeRemaining 是否接近 0，是的话就中断循环，等下次 requestIdleCallback 的回调再继续处理 nextUnitOfWork 指向的 Fiber 节点
     while (nextUnitOfWork && !shouldYield) {
       nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
       shouldYield = deadline.timeRemaining() < 1;
     }
 
     if (!nextUnitOfWork && wipRoot) {
-      // 没有 nextUnitOfWork 且有正在处理的 fiber 链表的根 wipRoot 的时候，也就是 reconcile 结束，开始执行 commit
+      // 没有 nextUnitOfWork 且有正在处理的 Fiber 链表的根 wipRoot 的时候，也就是 reconcile 结束，开始执行 commit
       commitRoot();
     }
 
-    // 用 requestIdleCallback 来代替 React 的时间分片，把 React Element 树转 fiber 的 reconcile 过程放到不同的任务里跑
+    // 用 requestIdleCallback 来代替 React 的时间分片，把 React Element 树转 Fiber 的 reconcile 过程放到不同的任务里跑
     requestIdleCallback(workLoop);
   }
 
@@ -98,14 +98,14 @@
   requestIdleCallback(workLoop);
 
   /**
-   * 处理单个Fiber单元
-   * @param {Object} fiber 当前处理的Fiber节点
-   * @returns {Object|null} 下一个待处理的Fiber节点
+   * 处理单个 Fiber 单元
+   * @param {Object} fiber 当前处理的 Fiber 节点
+   * @returns {Object|null} 下一个待处理的 Fiber 节点
    */
   function performUnitOfWork(fiber) {
     const isFunctionComponent = fiber.type instanceof Function;
 
-    // 处理每个 fiber 节点的时候，要根据类型做不同的处理
+    // 处理每个 Fiber 节点的时候，要根据类型做不同的处理
     if (isFunctionComponent) {
       updateFunctionComponent(fiber);
     } else {
@@ -113,7 +113,7 @@
     }
 
     // 构建 Fiber 遍历顺序：子节点 -> 兄弟节点 -> 父节点的兄弟节点
-    // 处理完当前 Fiber 节点之后，会按照 child、sibling、return 的顺序返回下一个要处理的 fiber 节点
+    // 处理完当前 Fiber 节点之后，会按照 child、sibling、return 的顺序返回下一个要处理的 Fiber 节点
     if (fiber.child) {
       return fiber.child;
     }
@@ -126,13 +126,13 @@
     }
   }
 
-  // 当前正在处理的Fiber节点和状态钩子索引
+  // 当前正在处理的 Fiber 节点和状态钩子索引
   let wipFiber = null;
   let stateHookIndex = null;
 
   /**
    * 更新函数组件
-   * @param {Object} fiber 函数组件对应的Fiber节点
+   * @param {Object} fiber 函数组件对应的 Fiber 节点
    */
   function updateFunctionComponent(fiber) {
     wipFiber = fiber;
@@ -146,8 +146,8 @@
   }
 
   /**
-   * 更新宿主组件（DOM元素）
-   * @param {Object} fiber 宿主组件对应的Fiber节点
+   * 更新宿主组件（DOM 元素）
+   * @param {Object} fiber 宿主组件对应的 Fiber 节点
    */
   function updateHostComponent(fiber) {
     if (!fiber.dom) {
@@ -157,12 +157,12 @@
   }
 
   /**
-   * 创建实际DOM节点
-   * @param {Object} fiber Fiber节点
-   * @returns {HTMLElement} 创建的DOM元素
+   * 创建实际 DOM 节点
+   * @param {Object} fiber Fiber 节点
+   * @returns {HTMLElement} 创建的 DOM 元素
    */
   function createDom(fiber) {
-    // 根据不同节点类型用不同方式创建 dom
+    // 根据不同节点类型用不同方式创建 DOM
     const dom =
       fiber.type === 'TEXT_ELEMENT'
         ? document.createTextNode('')
@@ -172,15 +172,15 @@
     return dom;
   }
 
-  // DOM属性更新辅助函数
+  // DOM 属性更新辅助函数
   const isEvent = (key) => key.startsWith('on');
   const isProperty = (key) => key !== 'children' && !isEvent(key);
   const isNew = (prev, next) => (key) => prev[key] !== next[key];
   const isGone = (prev, next) => (key) => !(key in next);
 
   /**
-   * 更新DOM属性
-   * @param {HTMLElement} dom DOM元素
+   * 更新 DOM 属性
+   * @param {HTMLElement} dom DOM 元素
    * @param {Object} prevProps 旧属性
    * @param {Object} nextProps 新属性
    */
@@ -221,21 +221,21 @@
   }
 
   /**
-   * 协调子元素，生成Fiber链表（Diff算法核心）
-   * @param {Object} wipFiber 当前Fiber节点
+   * 协调子元素，生成 Fiber 链表（Diff 算法核心）
+   * @param {Object} wipFiber 当前 Fiber 节点
    * @param {Array} elements 子元素数组
    */
   function reconcileChildren(wipFiber, elements) {
     let index = 0; // 记录同层中元素的位置
-    let oldFiber = wipFiber.alternate?.child; // 拿到旧 fiber
-    let prevSibling = null; // 记录创建好的最新的 fiber，用于构建 fiber 树
+    let oldFiber = wipFiber.alternate?.child; // 拿到旧 Fiber
+    let prevSibling = null; // 记录创建好的最新的 Fiber，用于构建 Fiber 树
 
     // 遍历新旧子节点进行对比
     while (index < elements.length || oldFiber != null) {
       const element = elements[index];
       let newFiber = null;
 
-      // Diff比较三种情况
+      // Diff 比较三种情况
       const sameType = element?.type === oldFiber?.type;
 
       if (sameType) {
@@ -267,34 +267,34 @@
       }
 
       if (oldFiber) {
-        // 依次取 sibling，逐一和新的 fiber 节点对比
+        // 依次取 sibling，逐一和新的 Fiber 节点对比
         oldFiber = oldFiber.sibling;
       }
 
-      // 构建Fiber链表
+      // 构建 Fiber 链表
       if (index === 0) {
-        // 如果新创建的 fiber 是当前层的第一个元素，则作为上一层（此时保存在 wipFiber）的 child 保存
+        // 如果新创建的 Fiber 是当前层的第一个元素，则作为上一层（此时保存在 wipFiber）的 child 保存
         wipFiber.child = newFiber;
       } else if (element) {
         // 同层的非第一个元素，均以 sibling 相连
         prevSibling.sibling = newFiber;
       }
 
-      // 记录创建好的最新的 fiber
+      // 记录创建好的最新的 Fiber
       prevSibling = newFiber;
       index++; // 递增位置信息
     }
   }
 
   /**
-   * 状态钩子（useState实现）
+   * 状态钩子（useState 实现）
    * @param {any} initialState 初始状态
    * @returns {[any, Function]} 状态和更新函数
    */
   function useState(initialState) {
     const currentFiber = wipFiber;
 
-    // 在 fiber 节点上用 stateHooks 数组来存储 state 和多次调用 setState 的回调函数
+    // 在 Fiber 节点上用 stateHooks 数组来存储 state 和多次调用 setState 的回调函数
     const oldHook = wipFiber.alternate?.stateHooks?.[stateHookIndex];
 
     const stateHook = {
@@ -335,7 +335,7 @@
   }
 
   /**
-   * 副作用钩子（useEffect实现）
+   * 副作用钩子（useEffect 实现）
    * @param {Function} callback 副作用回调
    * @param {Array} deps 依赖数组
    */
@@ -350,7 +350,7 @@
   }
 
   /**
-   * 提交所有变更到DOM
+   * 提交所有变更到 DOM
    */
   function commitRoot() {
     // commit 阶段先把需要删除的节点都删掉
@@ -369,17 +369,17 @@
   }
 
   /**
-   * 递归提交单个Fiber变更
-   * @param {Object|null} fiber 当前处理的Fiber节点
+   * 递归提交单个 Fiber 变更
+   * @param {Object|null} fiber 当前处理的 Fiber 节点
    */
   function commitWork(fiber) {
     // commitWork 按照 child、sibling 的顺序来递归遍历 fiber 链表，直到没有 fiber 后退出递归
     if (!fiber) return;
 
-    // 查找最近的DOM父节点
+    // 查找最近的 DOM 父节点
     let domParentFiber = fiber.return;
     while (!domParentFiber.dom) {
-      // 如果没有 dom 就不断向上找，直到找到可以挂载的 dom 节点
+      // 如果没有 DOM 就不断向上找，直到找到可以挂载的 DOM 节点
       domParentFiber = domParentFiber.return;
     }
     const domParent = domParentFiber.dom;
@@ -398,9 +398,9 @@
   }
 
   /**
-   * 递归删除DOM节点
-   * @param {Object} fiber 要删除的Fiber节点
-   * @param {HTMLElement} domParent 父DOM元素
+   * 递归删除 DOM 节点
+   * @param {Object} fiber 要删除的 Fiber 节点
+   * @param {HTMLElement} domParent 父 DOM 元素
    */
   function commitDeletion(fiber, domParent) {
     if (fiber.dom) {
@@ -467,7 +467,7 @@
     );
   }
 
-  // 暴露API到全局
+  // 暴露 API 到全局
   const MiniReact = {
     createElement,
     render,
