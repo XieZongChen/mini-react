@@ -88,7 +88,7 @@
       if (nextFiber.sibling) {
         return nextFiber.sibling;
       }
-      nextFiber = nextFiber.parent;
+      nextFiber = nextFiber.return;
     }
   }
 
